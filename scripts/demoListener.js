@@ -1,8 +1,9 @@
-import { Connection, clusterApiUrl } from "@solana/web3.js";
+// scripts/demoListener.js
+import getConnection from "../src/utils/getConnection.js";
 import watchRaydiumNewPools from "../src/listeners/raydiumNewPool.js";
 
-const conn = new Connection(clusterApiUrl("mainnet-beta"), "confirmed");
+const connection = getConnection(); // läser RPC_ENDPOINT från .env
 
-watchRaydiumNewPools(conn, ({ poolAddress }) => {
-  console.log("🎯 BuyExactIn hittad:", poolAddress);
+watchRaydiumNewPools(connection, ({ poolAddress }) => {
+  console.log("🎯 första BuyExactIn:", poolAddress);
 });
