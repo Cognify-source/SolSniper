@@ -1,7 +1,5 @@
-// jest.config.js
 export default {
   testEnvironment: "node",
-  transform: {},
-  extensionsToTreatAsEsm: [".js"],
+  transform: {},                 // kör native ESM, ingen Babel
   testMatch: ["**/?(*.)+(spec|test).js"],
 };
