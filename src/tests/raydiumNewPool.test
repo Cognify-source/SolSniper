@@ -1,0 +1,73 @@
+// tests/raydiumNewPool.test.js
+// Jest unit‑test för watchRaydiumNewPools – kör:  npm test
+
+import { jest } from "@jest/globals";
+
+// ——— mocks ———
+jest.mock("bottleneck", () => ({
+  __esModule: true,
+  default: class {
+    schedule(fn) {
+      return fn(); // kör omedelbart
+    }
+  },
+}));
+
+jest.mock("../src/utils/getPoolInfo.js", () => ({
+  __esModule: true,
+  default: async () => ({
+    baseMint: "So11111111111111111111111111111111111111112",
+    quoteMint: "USDC",
+    baseReserve: BigInt(3n * 10n ** 9n), // 3 SOL á 9 dec.
+    quoteReserve: BigInt(1_500n * 10n ** 6n), // 1 500 USDC
+    baseDecimals: 9,
+    quoteDecimals: 6,
+  }),
+}));
+
+jest.mock("../src/utils/getUsdPrice.js", () => ({
+  __esModule: true,
+  default: async () => 50, // 1 SOL ≈ 50 USD
+}));
+
+// ——— test‑subject ———
+import watchRaydiumNewPools from "../src/listeners/raydiumNewPool.js";
+
+// Minimal Cn/mock som bara implementerar onLogs
+class MockConnection {
+  constructor() {
+    this.listeners = new Map();
+    this.id = 1;
+  }
+  onLogs(_programId, handler) {
+    this.listeners.set(this.id, handler);
+    return this.id++;
+  }
+  emit(logs) {
+    for (const handler of this.listeners.values()) {
+      handler({ logs, signature: "TEST_SIG", slot: 0 });
+    }
+  }
+  removeOnLogsListener() {}
+}
+
+// ——— test ———
+test("fires callback once with poolAddress & tvlUsd", async () => {
+  const connection = new MockConnection();
+  const spy = jest.fn();
+  watchRaydiumNewPools(connection, spy);
+
+  connection.emit([
+    "Program LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj invoke [1]",
+    "Instruction: BuyExactIn",
+    "amm_info_pubkey: 9abcdEfghijkLmnoPQRSTuvWXyZ1234567890",
+  ]);
+
+  await new Promise((r) => setTimeout(r, 0));
+
+  expect(spy).toHaveBeenCalledTimes(1);
+  expect(spy.mock.calls[0][0]).toMatchObject({
+    poolAddress: "9abcdEfghijkLmnoPQRSTuvWXyZ1234567890",
+  });
+  expect(spy.mock.calls[0][0].tvlUsd).toBeGreaterThan(0);
+});
