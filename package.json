@@ -8,6 +8,7 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
   },
   "dependencies": {
+    "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.2",
     "bottleneck": "^2.19.5",
     "dotenv": "^16.6.1"
